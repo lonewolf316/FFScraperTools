@@ -16,15 +16,16 @@ missingSIDS = []
 for entry in dbOutput:
     dbSIDS.append(entry[0])
 
+print("Finding min")
 dbMin = min(dbSIDS)
+print("Finding max")
 dbMax = max(dbSIDS)
 
-
+print("Finding missing")
 for x in range(dbMin, dbMax):
-    print(x)
     checkExist = dbCursor.execute('''SELECT id FROM fanfiction WHERE id=?''',(x,))
     result = checkExist.fetchone()
     if not result:
         missingSIDS.append(x)
 
-print(missingSIDS)
+print("Missing:", missingSIDS)
