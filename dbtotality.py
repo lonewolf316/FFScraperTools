@@ -2,7 +2,7 @@
 
 import sqlite3
 
-pathDb = str(input("Filename for DB A:"))
+pathDb = str(input("Filename for DB:"))
 
 checkDB = sqlite3.connect(pathDb)
 
