@@ -1,6 +1,7 @@
 #Import to database from text files downloaded from internetarchive
 from urllib.parse import urlparse
-import sqlite3, os, tqdm
+from tqdm import tqdm
+import sqlite3, os
 
 def textfileparse(fileName):
     
@@ -80,24 +81,38 @@ if c.fetchone()[0]==0:
 else:
     print("Table exists")
 
+rootdir = "../Downloads"
+#rootdir = input("Root Directory:")
+allNames =[]
 
-rootdir = input("Root Directory:")
+x=0
+for root, dirs, files in os.walk(rootdir, topdown = False):
+    for name in files:
+        x+=1
+        allNames.append(os.path.join(root,name))
+        print("Files found:", x, end="\r")
+        
 
-for fileName in os.walk(rootdir):
-    try:
-        if fileName[-1][0].endswith(".txt"):
-            fullPath = fileName[0] + "/" + fileName[2][0]
-            print("Importing", fileName[2][0])
-            storyDict = textfileparse(fullPath)
-            storyID = storyDict.get("id")
-            c.execute('SELECT 1 FROM fanfiction WHERE id=? LIMIT 1', (storyID,))
-            exists = c.fetchone()    
-            if exists == None:       
-                c.execute('''INSERT INTO fanfiction (id, canon_type, canon, authorid, title, updated, published, language, genre, rating, chapters, words, reviews, favs, follows, status, story)
-                                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (storyDict.get('id'), storyDict.get('canon_type'), storyDict.get('canon'), storyDict.get('authorid'), storyDict.get('title'), storyDict.get('updated'), storyDict.get('published'), storyDict.get('language'), storyDict.get('genre'), storyDict.get('rating'), storyDict.get('chapters'), storyDict.get('words'), storyDict.get('reviews'), storyDict.get('favs'), storyDict.get('follows'), storyDict.get('status'), storyDict.get("story")))
-                connection.commit()
-            else:
-                print("Story already in DB. ID:", storyID)
-    except IndexError:
+print("Found", len(allNames), "files.")
+
+print("Sorting.")
+allNames.sort()
+print("Writing file list")
+with open('foundfiles.txt', 'w') as f:
+    for item in allNames:
+        f.write("%s\n" % item)
+
+print("Importing")
+for fileName in tqdm(allNames):
+    storyDict = textfileparse(fileName)
+    storyID = storyDict.get("id")
+    c.execute('SELECT 1 FROM fanfiction WHERE id=? LIMIT 1', (storyID,))
+    exists = c.fetchone()    
+    if exists == None:       
+        c.execute('''INSERT INTO fanfiction (id, canon_type, canon, authorid, title, updated, published, language, genre, rating, chapters, words, reviews, favs, follows, status, story)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (storyDict.get('id'), storyDict.get('canon_type'), storyDict.get('canon'), storyDict.get('authorid'), storyDict.get('title'), storyDict.get('updated'), storyDict.get('published'), storyDict.get('language'), storyDict.get('genre'), storyDict.get('rating'), storyDict.get('chapters'), storyDict.get('words'), storyDict.get('reviews'), storyDict.get('favs'), storyDict.get('follows'), storyDict.get('status'), storyDict.get("story")))
+        connection.commit()
+    else:
         pass
+
     
