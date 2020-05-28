@@ -12,12 +12,18 @@ def textfileparse(fileName):
     storyString = ""
 
     txtFile = open(fileName, "rt")
-    contents = txtFile.read()
+    try:
+        contents = txtFile.read()
+    except UnicodeDecodeError:
+        print("Encoding error, skipping:", fileName)
+        return(None)
+
     txtFile.close()
     contents = contents.splitlines()
-
-    paramDict["title"] = contents[3]
-    
+    try:
+        paramDict["title"] = contents[3]
+    except:
+        pass
     x = 0
     for line in contents:
         if x < 25:
@@ -81,19 +87,27 @@ if c.fetchone()[0]==0:
 else:
     print("Table exists")
 
-rootdir = "../Downloads"
-#rootdir = input("Root Directory:")
 allNames =[]
 
-x=0
-for root, dirs, files in os.walk(rootdir, topdown = False):
-    for name in files:
-        x+=1
-        allNames.append(os.path.join(root,name))
-        print("Files found:", x, end="\r")
-        
+if os.path.exists("foundfiles.txt"):
+    listFile = open("foundfiles.txt", "r")
+    lines = listFile.readlines()
 
-print("Found", len(allNames), "files.")
+    for line in lines:
+        allNames.append(line.rstrip("\n"))
+
+else:
+    rootdir = "/media/sagan/Storage/FanfictionProject/Downloads"
+    #rootdir = input("Root Directory:")
+    
+    x=0
+    for root, dirs, files in os.walk(rootdir, topdown = False):
+        for name in files:
+            x+=1
+            allNames.append(os.path.join(root,name))
+            print("Files found:", x, end="\r")
+            
+    print("Found", len(allNames), "files.")
 
 print("Sorting.")
 allNames.sort()
@@ -105,14 +119,15 @@ with open('foundfiles.txt', 'w') as f:
 print("Importing")
 for fileName in tqdm(allNames):
     storyDict = textfileparse(fileName)
-    storyID = storyDict.get("id")
-    c.execute('SELECT 1 FROM fanfiction WHERE id=? LIMIT 1', (storyID,))
-    exists = c.fetchone()    
-    if exists == None:       
-        c.execute('''INSERT INTO fanfiction (id, canon_type, canon, authorid, title, updated, published, language, genre, rating, chapters, words, reviews, favs, follows, status, story)
-                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (storyDict.get('id'), storyDict.get('canon_type'), storyDict.get('canon'), storyDict.get('authorid'), storyDict.get('title'), storyDict.get('updated'), storyDict.get('published'), storyDict.get('language'), storyDict.get('genre'), storyDict.get('rating'), storyDict.get('chapters'), storyDict.get('words'), storyDict.get('reviews'), storyDict.get('favs'), storyDict.get('follows'), storyDict.get('status'), storyDict.get("story")))
-        connection.commit()
-    else:
+    if storyDict == None:
         pass
-
-    
+    else:
+        storyID = storyDict.get("id")
+        c.execute('SELECT 1 FROM fanfiction WHERE id=? LIMIT 1', (storyID,))
+        exists = c.fetchone()    
+        if exists == None:       
+            c.execute('''INSERT INTO fanfiction (id, canon_type, canon, authorid, title, updated, published, language, genre, rating, chapters, words, reviews, favs, follows, status, story)
+                            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (storyDict.get('id'), storyDict.get('canon_type'), storyDict.get('canon'), storyDict.get('authorid'), storyDict.get('title'), storyDict.get('updated'), storyDict.get('published'), storyDict.get('language'), storyDict.get('genre'), storyDict.get('rating'), storyDict.get('chapters'), storyDict.get('words'), storyDict.get('reviews'), storyDict.get('favs'), storyDict.get('follows'), storyDict.get('status'), storyDict.get("story")))
+            connection.commit()
+        else:
+            pass
